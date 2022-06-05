@@ -9,7 +9,7 @@ try:
 except:
     from .hub_stub import display, Image
 
-CONNECT_IMAGES= [
+CONNECT_IMAGES = [
     Image('03579:00000:00000:00000:00000'),
     Image('00357:00000:00000:00000:00000'),
     Image('00035:00000:00000:00000:00000'),
@@ -37,6 +37,7 @@ SETTING1 = const(6)
 SETTING2 = const(7)
 BUTTONS = const(8)
 
+
 class RCReceiver(UARTPeripheral):
     def __init__(self, **kwargs):
         self.set_logo("00000:05550:05950:05550:00000")
@@ -52,24 +53,24 @@ class RCReceiver(UARTPeripheral):
         display.show(self.logo)
         # The delay is there to come after the char discovery phase.
         try:
-            t = Timer() # MINDSTORMS & Spike
+            t = Timer()  # MINDSTORMS & Spike
         except TypeError:
-            t = Timer(0) # ESP32
+            t = Timer(0)  # ESP32
         t.init(
             mode=Timer.ONE_SHOT,
             period=2000,
-            callback=lambda x:self.write(repr(self.logo))
-            )
+            callback=lambda x: self.write(repr(self.logo))
+        )
         super()._on_connect(*data)
 
     def set_logo(self, logo_str):
-        self.logo=Image(logo_str)
+        self.logo = Image(logo_str)
         self._CONNECT_ANIMATION = [img + self.logo for img in CONNECT_IMAGES]
 
     def button_pressed(self, button):
         # Test if any buttons are pressed on the remote
         if 0 < button < 9:
-            return self.controller_state(BUTTONS) & 1 << button-1
+            return self.controller_state(BUTTONS) & 1 << button - 1
         else:
             return False
 
@@ -77,7 +78,7 @@ class RCReceiver(UARTPeripheral):
         try:
             controller_state = struct.unpack("bbbbBBhhB", self.buffer)
         except:
-            controller_state = [0]*9
+            controller_state = [0] * 9
         if indices:
             if len(indices) is 1:
                 return controller_state[indices[0]]
@@ -85,17 +86,17 @@ class RCReceiver(UARTPeripheral):
                 return [controller_state[i] for i in indices]
         else:
             return controller_state
-        
+
 
 class RCTransmitter(UARTCentral):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # An empty 9 long list. Order is important.
-        self.controller_state = [0]*9
+        self.controller_state = [0] * 9
 
     def set_button(self, num, pressed):
         if 0 < num < 9:
-            bitmask = 0b1 << (num-1)
+            bitmask = 0b1 << (num - 1)
             if pressed:
                 self.controller_state[BUTTONS] |= bitmask
             else:
@@ -105,10 +106,10 @@ class RCTransmitter(UARTCentral):
         self.controller_state[stick] = clamp_int(value)
 
     def set_trigger(self, trig, value):
-        self.controller_state[trig] = clamp_int(value,0,200)
+        self.controller_state[trig] = clamp_int(value, 0, 200)
 
     def set_setting(self, stick, value):
-        self.controller_state[stick] = clamp_int(value, -2**15, 2**15)
+        self.controller_state[stick] = clamp_int(value, -2 ** 15, 2 ** 15)
 
     # Send data over the UART
     def transmit(self):
